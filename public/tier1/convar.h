@@ -1479,7 +1479,6 @@ public:
 
 	~CConCommandMemberAccessor()
 	{
-		this->Destroy();
 	}
 
 	void SetOwner( T* pOwner )
