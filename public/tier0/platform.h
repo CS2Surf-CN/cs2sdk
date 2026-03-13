@@ -1056,12 +1056,12 @@ FORCEINLINE void StoreLittleDWord( unsigned long *base, unsigned int dwordIndex,
 			__storewordbytereverse( dword, dwordIndex<<2, base );
 		}
 #else
-FORCEINLINE unsigned long LoadLittleDWord( const unsigned long *base, unsigned int dwordIndex )
+FORCEINLINE uint32 LoadLittleDWord( const uint32 *base, unsigned int dwordIndex )
 	{
 		return LittleDWord( base[dwordIndex] );
 	}
 
-FORCEINLINE void StoreLittleDWord( unsigned long *base, unsigned int dwordIndex, unsigned long dword )
+FORCEINLINE void StoreLittleDWord( uint32 *base, unsigned int dwordIndex, uint32 dword )
 	{
 		base[dwordIndex] = LittleDWord(dword);
 	}
@@ -1770,7 +1770,7 @@ inline void ValidateAlignmentExplicit(void)
 	// Alignment must be a multiple of the size of the object type, or elements will *NOT* be aligned!
 	ALIGN_ASSERT((sizeof(T) % ALIGN) == 0);
 	// Alignment should be a multiple of the base alignment of T
-	// ALIGN_ASSERT((ALIGN % VALIGNOF(T)) == 0);
+	ALIGN_ASSERT((ALIGN % VALIGNOF(T)) == 0);
 	// Alignment must not be bigger than the maximum declared alignment used by DECLARE_ALIGNED_BYTE_ARRAY
 	// (if you hit this, just add more powers of 2 below and increase this limit)
 	ALIGN_ASSERT( ALIGN <= 128 );

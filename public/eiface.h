@@ -97,6 +97,7 @@ class IToolGameSimulationAPI;
 class CCLCMsg_Move;
 template <typename T>
 class CNetMessagePB;
+class CCLCMsg_Diagnostic;
 
 namespace google
 {
@@ -183,10 +184,14 @@ public:
 
 	virtual void		SetFrameTimeAmnesty( const char *amnesty, int, float frametime ) = 0;
 	virtual const char *GetFrameTimeAmnesty( bool check_cvar ) = 0;
+
+	virtual void		unk101() = 0;
+
 	virtual void		ShowFrameTimeReport( void *, bool ) = 0;
 
 	virtual void		DumpNetStats( void *, void * ) = 0;
-	virtual void		unk101() = 0;
+
+	virtual void		unk201() = 0;
 
 	// Tell engine to change level ( "changelevel s1\n" or "changelevel2 s1 s2\n" )
 	virtual void		ChangeLevel( const char *s1, const char *s2 ) = 0;
@@ -319,8 +324,8 @@ public:
 	virtual void P2PGroupChanged() = 0;
 #endif
 
-	virtual void unk201() = 0;
-	virtual void unk202() = 0;
+	virtual void unk301() = 0;
+	virtual void unk302() = 0;
 	
 	// Use these to setup who can hear whose voice.
 	// Pass in client indices (which are their ent indices - 1).
@@ -328,23 +333,12 @@ public:
 	virtual bool SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen) = 0;
 	virtual bool SetClientProximity(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bUseProximity) = 0;
 
-	virtual void unk301() = 0;
-	virtual void unk302() = 0;
+	virtual void unk401() = 0;
+	virtual void unk402() = 0;
 
 	virtual void KickClient( CPlayerSlot nSlot, const char *szInternalReason, ENetworkDisconnectionReason reason ) = 0;
 	virtual void BanClient( CPlayerSlot nSlot, float flDuration, bool bKick ) = 0;
 	virtual void BanClient( CSteamID steamId, float flDuration, bool bKick ) = 0;
-
-	virtual void unk400() = 0;
-	virtual void unk401() = 0;
-	virtual void unk402() = 0;
-	virtual void unk403() = 0;
-	virtual void unk404() = 0;
-	virtual void unk405() = 0;
-	virtual void unk406() = 0;
-	virtual void unk407() = 0;
-
-	virtual void SetClientUpdateRate( CPlayerSlot nSlot, float flUpdateRate ) = 0;
 
 	virtual void unk500() = 0;
 	virtual void unk501() = 0;
@@ -354,8 +348,19 @@ public:
 	virtual void unk505() = 0;
 	virtual void unk506() = 0;
 	virtual void unk507() = 0;
-	virtual void unk508() = 0;
-	virtual void unk509() = 0;
+
+	virtual void SetClientUpdateRate( CPlayerSlot nSlot, float flUpdateRate ) = 0;
+
+	virtual void unk600() = 0;
+	virtual void unk601() = 0;
+	virtual void unk602() = 0;
+	virtual void unk603() = 0;
+	virtual void unk604() = 0;
+	virtual void unk605() = 0;
+	virtual void unk606() = 0;
+	virtual void unk607() = 0;
+	virtual void unk608() = 0;
+	virtual void unk609() = 0;
 };
 
 abstract_class IServerGCLobby
@@ -487,7 +492,7 @@ public:
 abstract_class ISource2GameEntities : public IAppSystem
 {
 public:
-	virtual					~ISource2GameEntities()	{}
+	virtual					~ISource2GameEntities() = 0;
 
 	// This sets a bit in pInfo for each edict in the list that wants to be transmitted to the
 	// client specified in pInfo.
@@ -500,15 +505,12 @@ public:
 	
 	// TERROR: Perform any PVS cleanup before a full update
 	virtual void			PrepareForFullUpdate( CEntityIndex nPlayerEntityIndex ) = 0;
-	
-	// Frees the entity attached to this edict
-	virtual void			FreeContainingEntity( CEntityIndex nEntityIndex ) = 0;
-	
-	virtual bool			GetWorldspaceCenter( CEntityIndex nEntityIndex, Vector *pCenter ) const = 0;
-	
+
 	virtual bool			ShouldClientReceiveStringTableUserData( const INetworkStringTable *pTable, int stringNumber, const CCheckTransmitInfo *pInfo ) = 0;
 	
 	virtual void			ResetChangeAccessorsSerialNumbersToZero() = 0;
+	
+	virtual bool			GetWorldspaceCenter( CEntityIndex nEntityIndex, Vector *pCenter ) const = 0;
 };
 
 #define INTERFACEVERSION_SERVERCONFIG			"Source2ServerConfig001"
@@ -615,13 +617,12 @@ public:
 
 	// TERROR: A player sent a voice packet
 	virtual void			ClientVoice( CPlayerSlot slot ) = 0;
-
-	// A user has had their network id setup and validated
-	virtual void			NetworkIDValidated( const char *pszUserName, const char *pszNetworkID ) = 0;
-
+	
 	// The client has submitted a keyvalues command
 	virtual void			ClientCommandKeyValues( CPlayerSlot slot, KeyValues *pKeyValues ) = 0;
-
+	
+	virtual void			ClientDiagnostic( CPlayerSlot slot, CCLCMsg_Diagnostic *pDiagnosticMsg ) = 0;
+	
 	virtual bool			ClientCanPause( CPlayerSlot slot ) = 0;
 
 	virtual void			HLTVClientFullyConnect( int index, const CSteamID &steamID ) = 0;
@@ -634,18 +635,19 @@ public:
 
 	virtual IHLTVDirector	*GetHLTVDirector( void ) = 0;
 
+	virtual int				GetPlayerTickBase( CPlayerSlot slot ) = 0;
 	virtual void			unk101( CPlayerSlot slot ) = 0;
-	virtual void			unk102( CPlayerSlot slot ) = 0;
 
 	// Handles incoming usermessages from the client
 	virtual void			ClientSvcUserMessage( CPlayerSlot slot, int um_type, uint32 size, const void *buf ) = 0;
 
-	// Something pawn related
+	// Returns this player hltv delay in seconds
+	virtual float			GetPlayerHltvDelay( CPlayerSlot slot, CEntityIndex &replay_ent ) = 0;
+	virtual bool			ReplayLastPlayerKill( CPlayerSlot slot, void *kill_info ) = 0;
+
 	virtual void			unk201() = 0;
 	virtual void			unk202() = 0;
-
 	virtual void			unk203() = 0;
-	virtual void			unk204() = 0;
 };
 
 typedef IVEngineServer2 IVEngineServer;

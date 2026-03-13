@@ -121,6 +121,10 @@ public:
 	// if copy_or_cleanup is true, if false would cleanup the buffer
 	virtual void				CopyUserInfoCvarDefaults( ConVarUserInfoSet_t buffer, int from, int to, bool copy_or_cleanup ) = 0;
 
+	// Calls completion callbacks on cvars and concommands if they exist, successful would be true if so
+	// Cvars & Concommands needs to have FCVAR_VCONSOLE_FUZZY_MATCHING for successful to be true if callbacks are available
+	virtual void				GetCompletionResults( const CCommand &command, CUtlVector< CUtlString > &completions, bool *successful = nullptr ) = 0;
+
 	// Register, unregister vars
 	virtual void				RegisterConVar( const ConVarCreation_t& setup, uint64 nAdditionalFlags, ConVarRef* pCvarRef, ConVarData** pCvarData ) = 0;
 	// Unregisters convar change callback, but leaves the convar in the lists,
@@ -161,6 +165,8 @@ public:
 	// AMNOTE: Mostly used for allocating CVValue_t and ConVarData/ConCommandData objects
 	void *AllocateMemory( int size )
 	{
+		CAutoLock lock( m_Mutex );
+
 		int aligned_size = ALIGN_VALUE( size, 8 );
 		
 		if(aligned_size + m_CurrentMemoryBufferSize > kMemoryBufferChunkMaxSize)
@@ -180,6 +186,8 @@ public:
 	// AMNOTE: Mostly used for allocating cvar/concommand names
 	const char *AllocateString( const char *string )
 	{
+		CAutoLock lock( m_Mutex );
+
 		if(!string || !string[0])
 			return "";
 
@@ -218,6 +226,14 @@ public:
 		int m_ConVarIndex;
 	};
 
+	struct ConVarCompletionCallbackData_t
+	{
+		CompletionCallbackInfo_t m_pCallBack;
+
+		// Register index of cvar which change cb comes from
+		int m_ConVarIndex;
+	};
+
 	struct ConCommandCallbackInfoNode_t
 	{
 		ConCommandCallbackInfo_t m_CB;
@@ -245,6 +261,7 @@ public:
 	CUtlHashtable<CUtlStringToken, uint16> m_ConVarHashes;
 	CUtlLinkedList<ConVarChangeCallbackData_t, unsigned short, true> m_ConVarChangeCBList;
 	CUtlLinkedList<ConVarFilterCallbackData_t, unsigned short, true> m_ConVarFilterCBList;
+	CUtlLinkedList<ConVarCompletionCallbackData_t, unsigned short, true> m_ConVarCompletionCBList;
 	int m_ConVarCount;
 
 	CUtlVector<IConVarListener *> m_CvarCreationListeners;
@@ -257,7 +274,7 @@ public:
 
 	int m_SplitScreenSlots;
 
-	CThreadMutex m_Mutex;
+	CAtomicMutex m_Mutex;
 	characterset_t m_CharacterSet;
 	KeyValues *m_GameInfoKV;
 
@@ -290,7 +307,6 @@ public:
 //-----------------------------------------------------------------------------
 
 // These are marked DLL_EXPORT for Linux.
-DECLARE_TIER1_INTERFACE( ICvar, cvar );
 DECLARE_TIER1_INTERFACE( ICvar, g_pCVar );
 
 
