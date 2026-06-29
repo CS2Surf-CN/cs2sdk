@@ -30,10 +30,13 @@ class CSchemaClassInfo;
 class CEntityClass;
 class CEntityIdentity;
 class CEntitySharedPulseSignature;
+class CNetworkSerializerClassInfo;
 class ServerClass;
 struct EntInput_t;
 struct EntOutput_t;
 struct datamap_t;
+
+typedef void (*BASEPTR)(CEntityInstance *ent);
 
 struct EntClassComponentOverride_t
 {
@@ -91,24 +94,24 @@ public:
 	}
 	
 public:
+	using FuncToNameCb = const char *(*)(BASEPTR think_fn);
+	using NameToFuncCb = BASEPTR (*)(const char *fn_name);
+
 	void *m_pScriptDesc;
-	void *m_unk001;
+	CNetworkSerializerClassInfo *m_NetworkSerializerInfo;
 
 	EntInput_t* m_pInputs;
 	EntOutput_t* m_pOutputs;
 	int m_nInputCount;
 	int m_nOutputCount;
 
-private:
-#ifdef _WIN32
-	char m_unk101[56];
-#else
-	char m_unk101[24];
-#endif
-
-public:
 	CEntitySharedPulseSignature *m_pSharedPulseSignature;
-	CEntitySharedPulseSignature *m_unk201;
+	void *m_unk101;
+
+	// Allows to get any think functions in use or to get its string name for this class
+	// does searches to the parent classes as well
+	NameToFuncCb m_NameToThinkFunc;
+	FuncToNameCb m_ThinkFuncToName;
 
 	EntClassComponentOverride_t* m_pComponentOverrides;
 	
@@ -119,8 +122,7 @@ public:
 	// Uses EntityClassFlags_t flags
 	uint m_flags;
 
-	// Special class group?
-	int m_unk301;
+	int m_SpawnOrder;
 	
 	uint m_nAllHelpersFlags;
 
